@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-Supported Assessment Platform: Math Word Problems</title>
+<style>
+  :root{
+    --blue:#1b5fa8; --blue-dark:#144a85; --blue-soft:#e8f1fb;
+    --green:#1e7a46; --green-soft:#e3f6ea;
+    --red:#b3261e; --red-soft:#fde8e6;
+    --ink:#1f2d3d; --muted:#4a5a6b; --bg:#f4f8fc; --card:#ffffff; --line:#d5e2f0;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:17px;line-height:1.6;color:var(--ink);background:var(--bg)}
+  h1,h2,h3{line-height:1.25;margin:0 0 .5em}
+  h1{font-size:2rem} h2{font-size:1.6rem;color:var(--blue-dark)} h3{font-size:1.2rem}
+  p{margin:0 0 .8em}
+  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+
+  /* Navigation */
+  nav{position:sticky;top:0;z-index:50;background:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  nav .wrap{display:flex;align-items:center;gap:8px;overflow-x:auto}
+  nav .brand{color:#fff;font-weight:700;white-space:nowrap;margin-right:8px;padding:12px 0}
+  nav a.link{color:#fff;text-decoration:none;white-space:nowrap;padding:14px 12px;font-weight:600;border-bottom:3px solid transparent}
+  nav a.link:hover,nav a.link:focus{background:var(--blue-dark);border-bottom-color:#9fe0b8;outline:none}
+  @media (max-width:640px){ nav .brand{display:none} }
+
+  /* Layout */
+  header.hero{background:linear-gradient(135deg,#dcecfb,#dff5e8);padding:48px 0 40px;border-bottom:1px solid var(--line)}
+  section{padding:40px 0;scroll-margin-top:56px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:18px;box-shadow:0 2px 6px rgba(20,74,133,.06)}
+  .grid{display:grid;gap:16px}
+  .grid.three{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .badge{display:inline-block;font-size:.85rem;font-weight:700;border-radius:999px;padding:2px 12px;margin-right:6px}
+  .easy{background:var(--green-soft);color:var(--green)}
+  .medium{background:#fff3d6;color:#7a5200}
+  .hard{background:var(--red-soft);color:var(--red)}
+  .topic{background:var(--blue-soft);color:var(--blue-dark)}
+
+  /* Quiz */
+  fieldset{border:0;padding:0;margin:0}
+  legend{font-weight:600;font-size:1.1rem;margin-bottom:10px;padding:0}
+  .opt{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;cursor:pointer;background:#fff;min-height:48px}
+  .opt:hover{border-color:var(--blue)}
+  .opt input{width:22px;height:22px;flex:none;accent-color:var(--blue)}
+  .opt.correct{border-color:var(--green);background:var(--green-soft)}
+  .opt.wrong{border-color:var(--red);background:var(--red-soft)}
+  .mark{font-weight:700;margin-left:auto}
+  .opt.correct .mark{color:var(--green)} .opt.wrong .mark{color:var(--red)}
+  .note{font-weight:600;margin-top:6px}
+  .note.ok{color:var(--green)} .note.bad{color:var(--red)}
+  textarea{width:100%;font:inherit;font-size:1rem;border:2px solid var(--line);border-radius:12px;padding:12px;min-height:110px;resize:vertical;color:var(--ink)}
+  textarea:focus{outline:3px solid #9cc4ee;border-color:var(--blue)}
+  button,.btn{font:inherit;font-weight:700;font-size:1.05rem;border:0;border-radius:12px;padding:13px 22px;cursor:pointer;background:var(--blue);color:#fff;min-height:48px}
+  button:hover{background:var(--blue-dark)}
+  button:focus-visible{outline:3px solid #9fe0b8;outline-offset:2px}
+  button.green{background:var(--green)} button.green:hover{background:#176238}
+  button.ghost{background:#fff;color:var(--blue-dark);border:2px solid var(--blue)}
+  button.ghost:hover{background:var(--blue-soft)}
+  .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
+  .score{font-size:1.3rem;font-weight:700;padding:14px 18px;border-radius:12px;background:var(--blue-soft);color:var(--blue-dark);margin-top:14px}
+  .model{display:none;margin-top:12px;border-left:6px solid var(--green);background:var(--green-soft);border-radius:10px;padding:12px 16px}
+  .model.show{display:block}
+
+  details{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:6px 18px}
+  summary{cursor:pointer;font-weight:700;font-size:1.15rem;padding:12px 0;color:var(--blue-dark)}
+  summary:focus-visible{outline:3px solid #9cc4ee}
+  .key-item{border-top:1px solid var(--line);padding:14px 0}
+  .key-item ul{margin:.4em 0 0 1.2em;padding:0}
+
+  /* Section 2 */
+  .row{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:26px}
+  @media (min-width:820px){ .row{grid-template-columns:1fr 1fr 1fr} }
+  .student{background:var(--blue-soft);border-radius:var(--radius);padding:18px;border:1px solid var(--line)}
+  .feedback{background:var(--green-soft);border-radius:var(--radius);padding:18px;border:1px solid #b9e3c9}
+  .teacher{background:#fff;border:2px dashed var(--blue);border-radius:var(--radius);padding:18px}
+  .teacher p{color:var(--muted)}
+  .scorepill{display:inline-block;background:var(--green);color:#fff;font-weight:700;border-radius:999px;padding:3px 14px;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+  th,td{border:1px solid var(--line);padding:12px;text-align:left;vertical-align:top}
+  th{background:var(--blue);color:#fff}
+  .tablewrap{overflow-x:auto}
+
+  /* Prompts */
+  pre{white-space:pre-wrap;word-wrap:break-word;background:#f0f6fc;border:1px solid var(--line);border-radius:12px;padding:16px;font-family:Consolas,Menlo,monospace;font-size:.95rem;line-height:1.55;margin:0 0 12px;color:var(--ink)}
+
+  /* Reflection */
+  .counter{font-weight:700;margin-top:8px}
+  .counter.good{color:var(--green)} .counter.low{color:#7a5200} .counter.high{color:var(--red)}
+
+  footer{background:var(--blue-dark);color:#fff;text-align:center;padding:24px 16px;margin-top:20px}
+</style>
+</head>
+<body>
+
+<nav aria-label="Main menu">
+  <div class="wrap">
+    <span class="brand">➕ Math Word Problems</span>
+    <a class="link" href="#home">Home</a>
+    <a class="link" href="#section1">Section 1: AI for Assessment</a>
+    <a class="link" href="#section2">Section 2: AI-Supported Feedback</a>
+    <a class="link" href="#prompts">Prompts Used</a>
+    <a class="link" href="#reflection">Reflection</a>
+  </div>
+</nav>
+
+<header class="hero" id="home">
+  <div class="wrap">
+    <h1>AI-Supported Assessment Platform: Math Word Problems</h1>
+    <p><strong>Grade 6</strong></p>
+    <p>Welcome! This site shows how AI can help a teacher with <strong>assessment</strong> (making a quiz) and <strong>feedback</strong> (helping students learn from their answers). Our topic is <strong>word problems</strong>.</p>
+    <div class="grid three" style="margin-top:20px">
+      <div class="card"><h3>📝 Section 1</h3><p>Try the quiz. Check your answers and see the Answer Key.</p></div>
+      <div class="card"><h3>💬 Section 2</h3><p>See student answers, AI feedback, and the teacher's review.</p></div>
+      <div class="card"><h3>🤖 Prompts Used</h3><p>Copy the two prompts that were given to the AI.</p></div>
+      <div class="card"><h3>🔍 Reflection</h3><p>Read about where AI helped and where it was not enough.</p></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- SECTION 1 -->
+<section id="section1">
+  <h2>Section 1: AI for Assessment</h2>
+  <p>This quiz has 8 questions about word problems. Questions 1–6 are multiple-choice. Questions 7–8 are short-answer: write 2–3 sentences and show your steps.</p>
+
+  <div id="mcContainer"></div>
+  <div class="actions">
+    <button id="checkBtn" class="green">Check my answers</button>
+    <button id="resetBtn" class="ghost">Try again</button>
+  </div>
+  <div id="scoreBox" class="score" role="status" aria-live="polite" hidden></div>
+
+  <h3 style="margin-top:32px">Short-answer questions</h3>
+  <div id="saContainer"></div>
+
+  <h3 style="margin-top:32px">Answer Key</h3>
+  <details>
+    <summary>Click to open or close the Answer Key</summary>
+    <div id="keyContainer"></div>
+  </details>
+</section>
+
+<!-- SECTION 2 -->
+<section id="section2">
+  <h2>Section 2: AI-Supported Feedback</h2>
+  <p>Here we look at <strong>Question 7</strong> (a two-step word problem). Four students answered it. The AI wrote feedback for each answer. Then the teacher checked the feedback.</p>
+
+  <div class="card">
+    <h3>Question 7</h3>
+    <p>A school buys 5 boxes of crayons. Each box has 12 crayons. Then the school gives 18 crayons to another class. How many crayons are left? Show your steps.</p>
+    <h3>Model answer</h3>
+    <p>First, I multiply 5 × 12 = 60 to find how many crayons there are in all. Then I subtract the 18 crayons that were given away: 60 − 18 = 42. So, 42 crayons are left.</p>
+    <h3>Key points</h3>
+    <ul>
+      <li>Multiply 5 × 12 = 60 (equal groups).</li>
+      <li>Subtract the 18 crayons given away: 60 − 18 = 42.</li>
+      <li>Write the final answer with a unit: 42 crayons.</li>
+    </ul>
+    <p><strong>Score guide (out of 4):</strong> 4 = correct and clearly explained · 3 = correct but missing explanation · 2 = some correct ideas, one mistake in thinking · 1 = needs a lot of help.</p>
+  </div>
+
+  <!-- Student A -->
+  <div class="row">
+    <div class="student">
+      <h3>Student A</h3>
+      <p>“First I multiplied 5 × 12 to find all the crayons: 5 × 12 = 60. Then I subtracted the 18 crayons that were given away: 60 − 18 = 42. So 42 crayons are left.”</p>
+    </div>
+    <div class="feedback">
+      <h3>AI feedback</h3>
+      <span class="scorepill">Score: 4 / 4</span>
+      <p><strong>Strength:</strong> You wrote “First I multiplied 5 × 12 to find all the crayons,” which clearly shows your plan.</p>
+      <p><strong>To improve:</strong> Your answer is complete and correct. To check it, estimate: 60 − 18 is about 60 − 20 = 40, so 42 makes sense.</p>
+      <p><strong>Next step:</strong> Try a three-step problem and explain each step the same way.</p>
+    </div>
+    <div class="teacher">
+      <h3>Teacher review: what I changed</h3>
+      <p>I changed the “To improve” tip. The AI suggested the estimate 5 × 10 = 50, but that does not check the final answer (42). I replaced it with 60 − 18 ≈ 60 − 20 = 40, which is a better check for the last step. I kept the score 4/4 because the answer is correct and clearly explained.</p>
+    </div>
+  </div>
+
+  <!-- Student B -->
+  <div class="row">
+    <div class="student">
+      <h3>Student B</h3>
+      <p>“5 × 12 = 60. 60 − 18 = 42. The answer is 42.”</p>
+    </div>
+    <div class="feedback">
+      <h3>AI feedback</h3>
+      <span class="scorepill">Score: 3 / 4</span>
+      <p><strong>Strength:</strong> You found the right answer, and “5 × 12 = 60” is correct.</p>
+      <p><strong>To improve:</strong> Your answer does not say what the numbers mean. Add words to explain each step and write “crayons.”</p>
+      <p><strong>Next step:</strong> Rewrite your answer in 2–3 sentences, starting with “First I…”.</p>
+    </div>
+    <div class="teacher">
+      <h3>Teacher review: what I changed</h3>
+      <p>I did not change this feedback. I checked the math (5 × 12 = 60, 60 − 18 = 42) and the score. 3/4 matches my score guide: the answer is correct, but the steps are not explained and there is no unit.</p>
+    </div>
+  </div>
+
+  <!-- Student C -->
+  <div class="row">
+    <div class="student">
+      <h3>Student C</h3>
+      <p>“I tried 12 − 18 but you cannot do that, so I did 18 − 12 = 6. Then I multiplied 6 × 5 = 30. So 30 crayons are left.”</p>
+    </div>
+    <div class="feedback">
+      <h3>AI feedback</h3>
+      <span class="scorepill">Score: 2 / 4</span>
+      <p><strong>Strength:</strong> You showed every step, and “6 × 5 = 30” is a correct multiplication.</p>
+      <p><strong>To improve:</strong> The 18 crayons were given away from all the crayons, not from one box, so find the total first.</p>
+      <p><strong>Next step:</strong> Draw 5 boxes of 12 crayons, count them all, then take away 18.</p>
+    </div>
+    <div class="teacher">
+      <h3>Teacher review: what I changed</h3>
+      <p>I changed the strength. The AI praised the student for noticing “you cannot” take 18 from 12. But the student then reversed the numbers (18 − 12), so that praise was too generous. I praised the correct multiplication 6 × 5 = 30 instead. The “To improve” part and the score 2/4 stayed the same.</p>
+    </div>
+  </div>
+
+  <!-- Student D -->
+  <div class="row">
+    <div class="student">
+      <h3>Student D</h3>
+      <p>“5 + 12 = 17. 17 + 18 = 35. The answer is 35 crayons.”</p>
+    </div>
+    <div class="feedback">
+      <h3>AI feedback</h3>
+      <span class="scorepill">Score: 1 / 4</span>
+      <p><strong>Strength:</strong> Nice start! You added correctly: “5 + 12 = 17” is right.</p>
+      <p><strong>To improve:</strong> “5 boxes” with “12 each” means equal groups, so multiply. “Given away” means take away, so subtract.</p>
+      <p><strong>Next step:</strong> Draw the story: 5 boxes with 12 crayons in each box. Then ask yourself: what happens when 18 crayons leave?</p>
+    </div>
+    <div class="teacher">
+      <h3>Teacher review: what I changed</h3>
+      <p>I changed the next step. The AI said to underline key words and pick an operation for each one. This can teach students to guess from words only, and it does not work in every problem. I replaced it with drawing the story and asking what is happening. The score 1/4 stayed the same.</p>
+    </div>
+  </div>
+
+  <h3>Teacher check of the AI output</h3>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>AI output</th><th>What was wrong or weak</th><th>What I changed</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Student A: “You can check with an estimate, like 5 × 10 = 50, to see that 60 makes sense.”</td><td>The estimate does not check the final answer 42. Also, “Everything is correct!” did not give a real improvement tip.</td><td>I wrote a better check: 60 − 18 is about 60 − 20 = 40, so 42 makes sense.</td></tr>
+        <tr><td>Student C: “You noticed ‘you cannot’ take 18 from 12, so you check if a step makes sense.”</td><td>The praise was too generous. The student then did 18 − 12, which is the wrong move, so the strength was not really true.</td><td>I praised the correct multiplication “6 × 5 = 30” instead.</td></tr>
+        <tr><td>Student D: “Underline the key words in the problem, then choose an operation for each one.”</td><td>Using only key words can mislead students. A word like “left” or “each” does not always mean the same operation.</td><td>I told the student to draw the story and ask what is happening to the crayons.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PROMPTS -->
+<section id="prompts">
+  <h2>Prompts Used</h2>
+  <p>These are the two prompts given to the AI. Click “Copy” to copy a prompt.</p>
+
+  <div class="card">
+    <h3>Prompt 1: Quiz and answer key</h3>
+    <pre id="prompt1">You are an experienced Grade 6 math teacher and assessment designer. Create a quiz called "Math Word Problems" for Grade 6 students (ages 11-12).
+
+Quiz rules:
+- 8 questions in total: 6 multiple-choice and 2 short-answer.
+- Multiple-choice: 4 options (A-D), only ONE correct answer. Do not use "all of the above" or "none of the above".
+- Short-answer: students answer in 2-3 sentences and show their solution steps.
+- Topics: addition/subtraction, multiplication/division, fractions, percentages, and two-step problems.
+- Difficulty: 3 easy, 3 medium, 2 harder. Include 1 real-life application problem.
+- Each question tests ONE clear idea. Use clear wording and no tricks.
+- Use short, simple language suitable for Grade 6.
+
+Then create an Answer Key. For each question give:
+1. The correct answer.
+2. A one-sentence explanation.
+3. For multiple-choice: why the most tempting wrong option is wrong.
+4. For short-answer: a model solution and 2-3 key points.
+
+Before you answer, double-check every calculation and make sure each multiple-choice question has exactly one correct option.</pre>
+    <button class="copy-btn" data-target="prompt1">Copy</button>
+  </div>
+
+  <div class="card">
+    <h3>Prompt 2: Sample answers and feedback</h3>
+    <pre id="prompt2">Use this short-answer question for Grade 6 students:
+"A school buys 5 boxes of crayons. Each box has 12 crayons. Then the school gives 18 crayons to another class. How many crayons are left? Show your steps."
+Model answer: 5 x 12 = 60, then 60 - 18 = 42, so 42 crayons are left.
+
+Task 1: Write 4 realistic student answers (2-3 sentences each):
+- 1 strong answer
+- 1 good but incomplete answer
+- 1 average answer with one misconception
+- 1 weak answer
+Do not label or point out the mistakes inside the answers.
+
+Task 2: For each student answer, write AI feedback with:
+- one specific strength (quote the student's own words),
+- one thing to improve (explain the gap or misconception),
+- one concrete next step,
+- a score out of 4.
+Tone: encouraging and age-appropriate for Grade 6. Maximum 60 words per answer.
+
+Check that the scores match the quality of the answers and that all math is correct.</pre>
+    <button class="copy-btn" data-target="prompt2">Copy</button>
+  </div>
+</section>
+
+<!-- REFLECTION -->
+<section id="reflection">
+  <h2>Reflection</h2>
+  <div class="card">
+    <label for="reflectionBox" style="font-weight:600;display:block;margin-bottom:8px">My reflection</label>
+    <textarea id="reflectionBox" style="min-height:200px" placeholder="[Write 100-150 words: Where did AI help me? Where was it not accurate or not enough? What would I do differently next time?]">AI helped me a lot with speed. It made the 8 questions, the answer key, and four realistic student answers in a few minutes. It was especially useful for finding the most tempting wrong options, like adding instead of multiplying. But AI was not always accurate or enough. In the feedback, it gave a weak estimate for Student A, praised Student C too much, and suggested a keyword strategy for Student D that can mislead students. I also had to check every calculation myself. Next time, I would give the AI a more detailed prompt with a score guide and a clear feedback style. I would also test the quiz with real Grade 6 students and compare AI feedback with what a real teacher would say, so I can see where students really struggle.</textarea>
+    <div id="wordCounter" class="counter low" role="status" aria-live="polite">Words: 0 (goal: 100–150)</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ---------- QUIZ DATA ---------- */
+const mc = [
+  {level:"Easy", cls:"easy", topic:"Subtraction",
+   q:"Sam has 126 marbles. He gives 48 marbles to his sister. How many marbles does Sam have now?",
+   opts:["174","78","68","88"], ans:1, tempt:0,
+   exp:"“Gives” means Sam loses marbles, so we subtract: 126 − 48 = 78.",
+   why:"A) 174 comes from adding 126 + 48, but Sam has fewer marbles after giving some away."},
+  {level:"Easy", cls:"easy", topic:"Multiplication",
+   q:"A box holds 24 pencils. A teacher buys 6 boxes. How many pencils does the teacher have?",
+   opts:["30","124","144","164"], ans:2, tempt:0,
+   exp:"6 boxes with 24 pencils each are equal groups, so we multiply: 24 × 6 = 144.",
+   why:"A) 30 comes from adding 24 + 6, but equal groups need multiplication."},
+  {level:"Easy", cls:"easy", topic:"Fractions",
+   q:"Lena ate 1/4 of a pizza. Her brother ate 2/4 of the same pizza. What fraction of the pizza did they eat together?",
+   opts:["3/4","3/8","1/2","1/4"], ans:0, tempt:1,
+   exp:"The pieces are the same size (fourths), so we add the tops: 1 + 2 = 3. The bottom stays 4, so the answer is 3/4.",
+   why:"B) 3/8 adds the bottom numbers too (4 + 4), but the pieces are still fourths."},
+  {level:"Medium", cls:"medium", topic:"Percentages",
+   q:"A jacket costs $40. It is on sale for 25% off. How much money does the sale take off the price?",
+   opts:["$15","$25","$30","$10"], ans:3, tempt:2,
+   exp:"25% is the same as 1/4, and 1/4 of $40 is $10.",
+   why:"C) $30 is the new price after the sale (40 − 10), but the question asks how much is taken off."},
+  {level:"Medium", cls:"medium", topic:"Two-step problem",
+   q:"Tom buys 3 notebooks that cost $4 each and 1 pen that costs $2. He pays with a $20 bill. How much change does he get?",
+   opts:["$8","$6","$4","$14"], ans:1, tempt:0,
+   exp:"Notebooks: 3 × 4 = 12. Add the pen: 12 + 2 = 14. Change: 20 − 14 = 6.",
+   why:"A) $8 comes from 20 − 12. It forgets to count the $2 pen."},
+  {level:"Hard", cls:"hard", topic:"Fractions",
+   q:"A cookie recipe needs 3/4 cup of flour for one batch. Ana makes 3 batches. How much flour does she need?",
+   opts:["9/12 cup","3 3/4 cups","2 1/4 cups","2 3/4 cups"], ans:2, tempt:0,
+   exp:"3 × 3/4 = 9/4, and 9/4 = 2 1/4 cups.",
+   why:"A) 9/12 multiplies the bottom number too (4 × 3). The pieces stay fourths, so the bottom number stays 4."}
+];
+
+const sa = [
+  {n:7, level:"Medium", cls:"medium", topic:"Two-step problem",
+   q:"A school buys 5 boxes of crayons. Each box has 12 crayons. Then the school gives 18 crayons to another class. How many crayons are left? Show your steps.",
+   model:"First, I multiply 5 × 12 = 60 to find how many crayons there are in all. Then I subtract the 18 crayons that were given away: 60 − 18 = 42. So, 42 crayons are left.",
+   points:["Multiply 5 × 12 = 60 (equal groups).","Subtract the 18 crayons given away: 60 − 18 = 42.","Write the final answer with a unit: 42 crayons."],
+   exp:"There are 60 crayons in all, and after giving away 18, 42 crayons are left."},
+  {n:8, level:"Hard", cls:"hard", topic:"Percentages (real-life)",
+   q:"A family's restaurant bill is $60. They leave a 15% tip. How much money do they pay in total (bill + tip)? Show your steps.",
+   model:"First, I find the tip. 10% of $60 is $6, and 5% is $3, so 15% is $6 + $3 = $9. Then I add the tip to the bill: $60 + $9 = $69. The family pays $69 in total.",
+   points:["Find 15% of $60 = $9 (for example 10% = $6 and 5% = $3).","Add the tip to the bill: $60 + $9.","Write the total with a unit: $69."],
+   exp:"The tip is $9, so the total is $60 + $9 = $69."}
+];
+
+/* ---------- RENDER MULTIPLE CHOICE ---------- */
+const letters = ["A","B","C","D"];
+const mcBox = document.getElementById("mcContainer");
+
+mc.forEach((item, i) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.id = "q" + (i+1);
+  const fs = document.createElement("fieldset");
+  const lg = document.createElement("legend");
+  lg.innerHTML = '<span class="badge ' + item.cls + '">' + item.level + '</span><span class="badge topic">' + item.topic + '</span><br>Question ' + (i+1) + '. ';
+  lg.appendChild(document.createTextNode(item.q));
+  fs.appendChild(lg);
+  item.opts.forEach((o, j) => {
+    const lab = document.createElement("label");
+    lab.className = "opt";
+    lab.innerHTML = '<input type="radio" name="q' + i + '" value="' + j + '">';
+    const t = document.createElement("span");
+    t.textContent = letters[j] + ") " + o;
+    lab.appendChild(t);
+    const m = document.createElement("span");
+    m.className = "mark";
+    lab.appendChild(m);
+    fs.appendChild(lab);
+  });
+  const note = document.createElement("div");
+  note.className = "note";
+  fs.appendChild(note);
+  card.appendChild(fs);
+  mcBox.appendChild(card);
+});
+
+/* ---------- RENDER SHORT ANSWER ---------- */
+const saBox = document.getElementById("saContainer");
+sa.forEach((item, k) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.id = "q" + item.n;
+  card.innerHTML =
+    '<p><span class="badge ' + item.cls + '">' + item.level + '</span><span class="badge topic">' + item.topic + '</span></p>' +
+    '<p><strong>Question ' + item.n + '.</strong> <span class="qtext"></span></p>' +
+    '<label for="sa' + item.n + '" style="font-weight:600">Your answer (2–3 sentences):</label>' +
+    '<textarea id="sa' + item.n + '" placeholder="Write your steps and your answer here..."></textarea>' +
+    '<div class="actions"><button class="ghost" data-model="m' + item.n + '">Show model answer</button></div>' +
+    '<div class="model" id="m' + item.n + '"><strong>Model answer:</strong> <span class="mtext"></span></div>';
+  card.querySelector(".qtext").textContent = item.q;
+  card.querySelector(".mtext").textContent = item.model;
+  saBox.appendChild(card);
+});
+
+saBox.addEventListener("click", e => {
+  const b = e.target.closest("button[data-model]");
+  if(!b) return;
+  const box = document.getElementById(b.dataset.model);
+  const show = box.classList.toggle("show");
+  b.textContent = show ? "Hide model answer" : "Show model answer";
+});
+
+/* ---------- CHECK ANSWERS ---------- */
+const scoreBox = document.getElementById("scoreBox");
+
+function clearMarks(){
+  document.querySelectorAll("#mcContainer .opt").forEach(o => {
+    o.classList.remove("correct","wrong");
+    o.querySelector(".mark").textContent = "";
+  });
+  document.querySelectorAll("#mcContainer .note").forEach(n => { n.textContent=""; n.className="note"; });
+}
+
+document.getElementById("checkBtn").addEventListener("click", () => {
+  clearMarks();
+  let score = 0, unanswered = 0;
+  mc.forEach((item, i) => {
+    const card = document.getElementById("q" + (i+1));
+    const opts = card.querySelectorAll(".opt");
+    const note = card.querySelector(".note");
+    const chosen = card.querySelector("input:checked");
+    opts[item.ans].classList.add("correct");
+    if(!chosen){
+      unanswered++;
+      opts[item.ans].querySelector(".mark").textContent = "✓ Correct answer";
+      note.textContent = "You did not answer this one. The correct answer is " + letters[item.ans] + ".";
+      note.classList.add("bad");
+    } else if(+chosen.value === item.ans){
+      score++;
+      opts[item.ans].querySelector(".mark").textContent = "✓ Correct";
+      note.textContent = "✓ Well done!";
+      note.classList.add("ok");
+    } else {
+      const wrongOpt = opts[+chosen.value];
+      wrongOpt.classList.add("wrong");
+      wrongOpt.querySelector(".mark").textContent = "✗ Not correct";
+      opts[item.ans].querySelector(".mark").textContent = "✓ Correct answer";
+      note.textContent = "✗ The correct answer is " + letters[item.ans] + ". " + item.exp;
+      note.classList.add("bad");
+    }
+  });
+  scoreBox.hidden = false;
+  scoreBox.textContent = "Your score: " + score + " / " + mc.length +
+    (unanswered ? " (" + unanswered + " not answered)" : "") +
+    (score === mc.length ? " 🎉 Excellent!" : score >= 4 ? " 👍 Good job!" : " Keep practicing!");
+  scoreBox.scrollIntoView({behavior:"smooth", block:"nearest"});
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  document.querySelectorAll("#mcContainer input").forEach(r => r.checked = false);
+  clearMarks();
+  scoreBox.hidden = true;
+});
+
+/* ---------- ANSWER KEY ---------- */
+const key = document.getElementById("keyContainer");
+mc.forEach((item, i) => {
+  const d = document.createElement("div");
+  d.className = "key-item";
+  d.innerHTML =
+    '<h3>Question ' + (i+1) + ' <span class="badge ' + item.cls + '">' + item.level + '</span></h3>' +
+    '<p><strong>Correct answer:</strong> <span class="ca"></span></p>' +
+    '<p><strong>Explanation:</strong> <span class="ex"></span></p>' +
+    '<p><strong>Most tempting wrong option:</strong> <span class="wy"></span></p>';
+  d.querySelector(".ca").textContent = letters[item.ans] + ") " + item.opts[item.ans];
+  d.querySelector(".ex").textContent = item.exp;
+  d.querySelector(".wy").textContent = item.why;
+  key.appendChild(d);
+});
+sa.forEach(item => {
+  const d = document.createElement("div");
+  d.className = "key-item";
+  d.innerHTML =
+    '<h3>Question ' + item.n + ' <span class="badge ' + item.cls + '">' + item.level + '</span></h3>' +
+    '<p><strong>Correct answer:</strong> <span class="ca"></span></p>' +
+    '<p><strong>Explanation:</strong> <span class="ex"></span></p>' +
+    '<p><strong>Model solution:</strong> <span class="ms"></span></p>' +
+    '<p><strong>Key points:</strong></p><ul></ul>';
+  d.querySelector(".ca").textContent = item.n === 7 ? "42 crayons" : "$69";
+  d.querySelector(".ex").textContent = item.exp;
+  d.querySelector(".ms").textContent = item.model;
+  const ul = d.querySelector("ul");
+  item.points.forEach(p => { const li = document.createElement("li"); li.textContent = p; ul.appendChild(li); });
+  key.appendChild(d);
+});
+
+/* ---------- COPY BUTTONS ---------- */
+document.querySelectorAll(".copy-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const text = document.getElementById(btn.dataset.target).innerText;
+    const done = () => { btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = "Copy", 1800); };
+    if(navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done));
+    } else { fallback(text, done); }
+  });
+});
+function fallback(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ alert("Please select the text and copy it by hand."); }
+  document.body.removeChild(ta);
+}
+
+/* ---------- WORD COUNTER ---------- */
+const rb = document.getElementById("reflectionBox");
+const wc = document.getElementById("wordCounter");
+rb.addEventListener("input", () => {
+  const words = rb.value.trim() ? rb.value.trim().split(/\s+/).length : 0;
+  let msg = "Words: " + words + " (goal: 100–150)", cls = "counter ";
+  if(words < 100){ cls += "low"; msg += " – keep writing"; }
+  else if(words <= 150){ cls += "good"; msg += " – ✓ great length"; }
+  else { cls += "high"; msg += " – too long, please shorten"; }
+  wc.className = cls; wc.textContent = msg;
+});
+rb.dispatchEvent(new Event("input"));
+</script>
+</body>
+</html>
